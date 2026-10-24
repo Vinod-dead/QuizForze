@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuizForge - Live AI quizzes for the classroom</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="logo">Q</span>QuizForge</a>
+    <span class="pill">Powered by Nebius Token Factory</span>
+  </header>
+  <main class="wrap">
+    <div class="grid two" style="align-items:center;gap:40px">
+      <section>
+        <h1>Forge a live quiz in seconds. Watch the class light up.</h1>
+        <p class="muted" style="font-size:1.1rem">Teachers describe a topic and AI drafts the questions. Students join with a code, answer in real time, and the leaderboard updates the moment each question closes.</p>
+        <div class="chips" style="margin-top:18px">
+          <span class="chip">AI question generation</span><span class="chip">Real-time WebSockets</span>
+          <span class="chip">Speed &amp; streak scoring</span><span class="chip">Teacher + student apps</span>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="authTitle">
+        <div class="tabs" role="tablist" id="roleTabs">
+          <button role="tab" aria-selected="true" data-role="student">I'm a student</button>
+          <button role="tab" aria-selected="false" data-role="teacher">I'm a teacher</button>
+        </div>
+        <h2 id="authTitle">Sign in</h2>
+        <form id="form" class="stack" novalidate>
+          <div class="field hidden" id="nameField"><label for="name">Your name</label><input id="name" autocomplete="name" maxlength="40"></div>
+          <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" minlength="8" required></div>
+          <div id="err" class="msg hidden" role="alert"></div>
+          <button class="btn block big" id="submit" type="submit">Sign in</button>
+        </form>
+        <p class="muted small" style="margin:14px 0 0">
+          <span id="switchText">New here?</span> <a href="#" id="switchLink">Create an account</a>
+        </p>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="/js/login.js"></script>
+</body>
+</html>

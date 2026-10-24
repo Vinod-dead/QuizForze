@@ -1,0 +1,25 @@
+{
+  "name": "quizforge",
+  "version": "1.0.0",
+  "description": "QuizForge - Live AI quiz engine for classrooms (Nebius Token Factory + WebSockets)",
+  "type": "module",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test tests/*.test.js",
+    "loadtest": "node scripts/loadtest.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "ws": "^8.22.0"
+  }
+}
