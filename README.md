@@ -1,154 +1,171 @@
-# QuizForge
+# ⚡ QuizForge — AI-Powered Live Quiz Platform
 
-**An AI-powered live quiz platform for interactive classroom learning.**
+**Turn any classroom into an interactive, AI-powered quiz arena.**
 
-QuizForge helps teachers create topic-based quizzes with AI, host live classroom sessions, and understand student performance through real-time scoring, leaderboards, and AI-generated teaching insights.
+QuizForge is a live quiz platform designed to help teachers create quizzes and engage students through real-time participation, automatic scoring, and leaderboards. It integrates **Nebius Token Factory** for AI-powered question generation using a configured NVIDIA model.
 
-Built for the **Nebius × NVIDIA hackathon**, QuizForge integrates NVIDIA Nemotron through Nebius Token Factory.
+> Built for the Nebius × NVIDIA Global AI Hackathon.
 
-## Features
+## ✨ Features
 
-### Teacher dashboard
-- Generate questions by topic, question type, count, and difficulty.
-- Review and edit questions before hosting.
-- Run live quiz sessions and monitor results.
-- View leaderboards and AI-generated teaching insights.
+- 🤖 **AI Question Generation** — Generate quiz questions from a topic, difficulty, question type, and requested question count.
+- 🎮 **Live Multiplayer Quizzes** — Let students join and participate in teacher-hosted quiz sessions.
+- ⚡ **Real-Time Communication** — Use WebSockets to distribute questions, answers, and quiz updates.
+- 🏆 **Live Leaderboards** — Track scores and display rankings during a quiz.
+- 👨‍🏫 **Teacher Experience** — Create quizzes, host sessions, and control quiz progression.
+- 🎓 **Student Experience** — Join sessions, answer questions, and view results.
+- 🔐 **Authentication** — JWT-based authentication and role-aware access.
+- 💾 **Persistent Storage** — Store application data using SQLite.
+- 🛟 **Fallback Question Bank** — Support offline question generation when the AI service is unavailable, where implemented.
 
-### Student dashboard
-- Join live quizzes using a five-character room code.
-- Answer questions from supported devices.
-- Receive personal results, scores, and rankings.
-- Participate in a real-time classroom quiz experience.
+## 🧰 Tech Stack
 
-### AI and reliability
-- NVIDIA Nemotron model integration through Nebius Token Factory.
-- Schema validation for generated questions.
-- Retry handling and offline question-bank fallback.
-- AI-assisted teaching insights based on question-level accuracy.
+| Component | Technology |
+|---|---|
+| Runtime | Node.js |
+| Backend | Express.js |
+| AI inference | Nebius Token Factory |
+| AI model | NVIDIA model configured through environment variables |
+| Real-time communication | WebSockets |
+| Database | SQLite |
+| Authentication | JSON Web Tokens (JWT) |
+| Testing | Project test suite |
 
-### Real-time architecture
-- Node.js and Express server.
-- WebSocket-based quiz events.
-- Server-authoritative scoring and answer validation.
-- SQLite persistence for quiz data and results.
+## 🏗️ Architecture
 
-## Quick start
+```mermaid
+flowchart TB
+    T["Teacher Dashboard"]
+    S["Student Dashboard"]
 
-**Requirements:** Node.js 20 or later and npm.
+    API["Express API<br/>Authentication and validation"]
+    AI["AI Question Generation"]
+    N["Nebius Token Factory<br/>Configured NVIDIA model"]
+    V["Question validation"]
+    DB[("SQLite Database")]
 
-```bash
-npm install
+    LIVE["Live Quiz Engine<br/>WebSockets"]
+    SCORE["Scoring and Leaderboard"]
+
+    T -->|"Create quiz request"| API
+    API --> AI
+    AI -->|"API request"| N
+    N -->|"Generated response"| AI
+    AI --> V
+    V -->|"Validated questions"| API
+    API <--> DB
+
+    T <-->|"Host and control quiz"| LIVE
+    S <-->|"Join and submit answers"| LIVE
+    LIVE --> SCORE
+    SCORE <--> DB
+    LIVE -->|"Quiz updates and results"| T
+    LIVE -->|"Questions and feedback"| S
 ```
 
-Create your local environment file:
+## 🧠 AI Integration
+
+QuizForge connects to Nebius Token Factory through an OpenAI-compatible API to generate quiz questions.
+
+The configured model is selected through the `NEBIUS_MODEL` environment variable. Keep model configuration separate from source code so that supported models can be changed without modifying the application.
+
+AI-generated output should be validated before it is used in a live quiz. If the AI service is unavailable, the application can use its fallback question bank where supported by the implementation.
+
+**Security:** Never commit API keys or other secrets to GitHub. Store them in your local `.env` file.
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Install the following:
+
+- Node.js 20 or later
+- npm
+- Git
+- A Nebius Token Factory API key for AI-powered question generation
+
+### 1. Clone the repository
 
 ```bash
-# macOS/Linux
-cp .env.example .env
+git clone https://github.com/Vinod-dead/QuizForze.git
+cd QuizForze
+```
 
-# Windows PowerShell
+### 2. Install dependencies
+
+```bash
+npm ci
+```
+
+### 3. Configure environment variables
+
+Create a local `.env` file using `.env.example` as a reference.
+
+```powershell
 Copy-Item .env.example .env
 ```
 
-Edit `.env` and set your Nebius Token Factory API key:
+Open `.env` and configure the variables required by the project, including your Nebius API key and desired model.
 
-```env
-NEBIUS_API_KEY=your_api_key_here
-NEBIUS_BASE_URL=https://api.tokenfactory.nebius.com/v1
-NEBIUS_MODEL=nvidia/Nemotron-3_5-Lightning
-JWT_SECRET=replace_with_a_long_random_secret
-PORT=3000
-DB_PATH=./data/quizforge.db
-```
+Do not paste your API key into source files, README examples, screenshots, or public commits.
 
-Use a model ID enabled for your Nebius account. Keep API keys and production secrets private.
+### 4. Start the application
 
-Start the application:
+Use the start command defined in `package.json`. For example, if the project defines `npm start`:
 
 ```bash
 npm start
 ```
 
-Open `http://localhost:3000`.
+If the project uses a different script, use the corresponding command from `package.json`.
 
-Without an API key, the application can use its built-in offline question bank, subject to the available fallback questions.
+## 🧪 Testing
 
-## Try a live quiz
-
-1. Open the application and register as a teacher.
-2. Generate a quiz, review the questions, and save it as a live session.
-3. Open the student page in another browser window or private session.
-4. Register as a student and join using the room code.
-5. Start the quiz and test answering, scoring, and leaderboard updates.
-
-## Technology stack
-
-- **AI inference:** Nebius Token Factory
-- **AI model:** NVIDIA Nemotron 3.5 Lightning
-- **Backend:** Node.js and Express
-- **Real-time communication:** WebSockets
-- **Database:** SQLite
-- **Authentication:** JWT
-- **Testing:** Node.js test runner and project test suite
-
-## Architecture
-
-```mermaid
-flowchart LR
-    T[Teacher dashboard] --> API[Express API and authentication]
-    API --> N[Nebius Token Factory]
-    N --> V[Question validation]
-    V --> API
-    API <--> DB[(SQLite)]
-    T <--> WS[WebSocket live quiz engine]
-    S[Student dashboard] <--> WS
-    WS --> SC[Scoring and leaderboard]
-    SC --> DB
-```
-
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for further technical details.
-
-## Testing
-
-Run the project's tests:
+Install dependencies before running the project's test suite:
 
 ```bash
 npm test
 ```
 
-If the load-test script is available, run:
+Check the output for the actual test results. Test coverage and performance figures should only be published when they have been measured and verified.
 
-```bash
-npm run loadtest
-```
+## 🎯 Typical Workflow
 
-Load-test measurements depend on the environment. Any reported benchmark should include the test conditions and should not be interpreted as a guarantee of production internet performance.
+1. A teacher opens the platform and creates a quiz.
+2. The teacher provides a topic and question-generation preferences.
+3. QuizForge requests AI-generated questions from Nebius Token Factory.
+4. The application validates the generated questions.
+5. The teacher hosts a live quiz session.
+6. Students join and submit their answers in real time.
+7. QuizForge updates scores and displays results.
 
-## Project structure
+## 🔒 Security and Reliability
 
-```text
-server/       API, AI integration, authentication, scoring, and live engine
-public/       Teacher and student interfaces
-tests/        Automated tests
-scripts/      Load-testing utilities
-docs/         Architecture documentation
-```
+- Keep `.env` and all API credentials private.
+- Validate AI-generated content before displaying it to students.
+- Handle unavailable AI services gracefully.
+- Validate authentication and authorization on protected routes.
+- Test WebSocket connections and session handling.
+- Do not expose private student information in public logs or leaderboards.
 
-## Deployment
+## 🗺️ Roadmap
 
-QuizForge can be deployed to a Node.js host that supports WebSockets and persistent storage.
+Potential improvements include:
 
-Configure the required environment variables in your hosting provider's secret manager. Use persistent storage for SQLite and keep a single application instance while live room state remains in memory.
+- More question formats and configurable quiz templates.
+- Improved question-quality checks.
+- Session analytics and downloadable reports.
+- Additional accessibility and classroom customization options.
+- More robust error handling and automated tests.
 
-A multi-instance deployment would require shared live state and coordination, such as Redis-based pub/sub.
+## 🤝 Contributing
 
-## Current limitations
+Contributions, bug reports, and feature suggestions are welcome. Open an issue to discuss a change before submitting a pull request.
 
-- Vector-based personalization of follow-up quizzes is not implemented.
-- Multi-instance scaling requires shared live state.
-- Live rooms do not resume after a server restart.
-- Email verification and password reset are not implemented.
+## 📄 License
 
-## License
+A license has not been specified here. Add a `LICENSE` file only after choosing a license that is appropriate for the project's code and assets.
 
-See [`LICENSE`](LICENSE).
+---
+
+**QuizForge — Create. Play. Learn.**
