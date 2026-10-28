@@ -1,116 +1,154 @@
 # QuizForge
 
-**A live, AI-powered classroom quiz platform.** A teacher describes a topic, AI drafts the questions, students join with a code and answer in real time, and a leaderboard updates the moment each question closes.
+**An AI-powered live quiz platform for interactive classroom learning.**
 
-Built for the **Nebius x NVIDIA hackathon** with Nebius Token Factory as the AI backend.
+QuizForge helps teachers create topic-based quizzes with AI, host live classroom sessions, and understand student performance through real-time scoring, leaderboards, and AI-generated teaching insights.
 
-| Teacher app (`/teacher`) | Student app (`/student`) |
-|---|---|
-| Generate questions by topic, type, count and difficulty; edit them; host live; see results and AI insights | Join with a 5-letter code, answer on any device, see personal result, rank and final podium |
+Built for the **Nebius × NVIDIA hackathon**, QuizForge integrates NVIDIA Nemotron through Nebius Token Factory.
 
-Both apps are served by one Node server and share auth, REST API and WebSocket.
+## Features
 
-## Quick start (about 60 seconds)
+### Teacher dashboard
+- Generate questions by topic, question type, count, and difficulty.
+- Review and edit questions before hosting.
+- Run live quiz sessions and monitor results.
+- View leaderboards and AI-generated teaching insights.
+
+### Student dashboard
+- Join live quizzes using a five-character room code.
+- Answer questions from supported devices.
+- Receive personal results, scores, and rankings.
+- Participate in a real-time classroom quiz experience.
+
+### AI and reliability
+- NVIDIA Nemotron model integration through Nebius Token Factory.
+- Schema validation for generated questions.
+- Retry handling and offline question-bank fallback.
+- AI-assisted teaching insights based on question-level accuracy.
+
+### Real-time architecture
+- Node.js and Express server.
+- WebSocket-based quiz events.
+- Server-authoritative scoring and answer validation.
+- SQLite persistence for quiz data and results.
+
+## Quick start
+
+**Requirements:** Node.js 20 or later and npm.
 
 ```bash
 npm install
-cp .env.example .env        # then paste your Nebius Token Factory key into NEBIUS_API_KEY
-npm start                   # http://localhost:3000
 ```
 
-No key? It still works: a built-in offline question bank is used so you can demo the live flow immediately.
+Create your local environment file:
 
-**Try it with 3 browser windows:** (1) register as a teacher at `/`, generate a quiz and click *Save & go live*; (2) and (3) register two students (use a private window for the second), enter the code. Start the quiz from the teacher window.
+```bash
+# macOS/Linux
+cp .env.example .env
 
-### Configuration (`.env`)
+# Windows PowerShell
+Copy-Item .env.example .env
+```
 
-| Variable | Purpose |
-|---|---|
-| `NEBIUS_API_KEY` | Your Nebius Token Factory API key (server-side only) |
-| `NEBIUS_BASE_URL` | Defaults to `https://api.tokenfactory.nebius.com/v1` |
-| `NEBIUS_MODEL` | Any chat model enabled on your account (default `meta-llama/Llama-3.3-70B-Instruct`; check the Token Factory console for the exact model IDs you have) |
-| `JWT_SECRET` | Required in production |
-| `DB_PATH`, `PORT` | SQLite file location and port |
+Edit `.env` and set your Nebius Token Factory API key:
+
+```env
+NEBIUS_API_KEY=your_api_key_here
+NEBIUS_BASE_URL=https://api.tokenfactory.nebius.com/v1
+NEBIUS_MODEL=nvidia/Nemotron-3_5-Lightning
+JWT_SECRET=replace_with_a_long_random_secret
+PORT=3000
+DB_PATH=./data/quizforge.db
+```
+
+Use a model ID enabled for your Nebius account. Keep API keys and production secrets private.
+
+Start the application:
+
+```bash
+npm start
+```
+
+Open `http://localhost:3000`.
+
+Without an API key, the application can use its built-in offline question bank, subject to the available fallback questions.
+
+## Try a live quiz
+
+1. Open the application and register as a teacher.
+2. Generate a quiz, review the questions, and save it as a live session.
+3. Open the student page in another browser window or private session.
+4. Register as a student and join using the room code.
+5. Start the quiz and test answering, scoring, and leaderboard updates.
+
+## Technology stack
+
+- **AI inference:** Nebius Token Factory
+- **AI model:** NVIDIA Nemotron 3.5 Lightning
+- **Backend:** Node.js and Express
+- **Real-time communication:** WebSockets
+- **Database:** SQLite
+- **Authentication:** JWT
+- **Testing:** Node.js test runner and project test suite
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  T[Teacher app] -->|topic, type, count, difficulty| API[Express API + JWT roles]
-  API -->|chat/completions| N[(Nebius Token Factory)]
-  N -->|JSON| V[Validator]
-  V --> API
-  API <--> DB[(SQLite)]
-  T <-->|WebSocket host| E[Live engine]
-  S[Student app] <-->|WebSocket join/answer| E
-  E --> SC[Scoring] 
-  E --> DB
-  E -->|question, reveal, leaderboard| T
-  E -->|question, personal result| S
+    T[Teacher dashboard] --> API[Express API and authentication]
+    API --> N[Nebius Token Factory]
+    N --> V[Question validation]
+    V --> API
+    API <--> DB[(SQLite)]
+    T <--> WS[WebSocket live quiz engine]
+    S[Student dashboard] <--> WS
+    WS --> SC[Scoring and leaderboard]
+    SC --> DB
 ```
 
-Full state machine, decision table and scaling path: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for further technical details.
 
-### Key design decisions
+## Testing
 
-- **Server-authoritative game logic.** The server owns the clock, grading and scores; students never receive the correct answer before reveal (asserted in an e2e test).
-- **LLM output is untrusted.** Every generated question is schema-validated; failures retry once, then fall back to an offline bank so a class is never blocked.
-- **Early reveal.** When every connected student has answered, the question closes immediately.
-- **Reconnect-safe.** Refreshing a student tab restores the current question, remaining time and score.
-- **SQLite + in-memory live state** for zero-ops deployment; Redis/Postgres is the documented scale-out path.
-
-### My additions (engineering judgement)
-
-1. **Speed + streak scoring** (500 base + up to 500 speed + up to 250 streak bonus), implemented as a pure, unit-tested function.
-2. **AI teaching insights**: after a session, per-question accuracy is turned into "what they understood, likely misconceptions, one re-teach activity".
-3. **Built-in measurement**: `/api/metrics` exposes latency percentiles and a load-test script reproduces the numbers below.
-
-## Measured results
-
-Run `npm run loadtest` (200 simulated students x 3 questions, real WebSockets, one Node process, loopback network, Node 22):
-
-| Metric | Result |
-|---|---|
-| Answers persisted | 600 / 600 |
-| Question fan-out to 200 clients | p50 5.4 ms, p95 9.0 ms |
-| Answer ack round-trip | p50 0.4 ms, p95 0.7 ms |
-| Server answer handling (grade + score + SQLite write) | p50 0.11 ms, p95 0.2 ms |
-| Personalised reveal fan-out (200 messages) | p95 4.1 ms |
-| Memory | about 100 MB RSS |
-
-These are loopback numbers on a single machine, so real-world latency will be dominated by the network. Treat them as a measure of server overhead, not an internet benchmark. `npm test` runs 9 tests (scoring, validation and a full teacher + 2-student live session).
-
-## Project layout
-
-```
-server/   app.js  routes.js  engine.js  ws.js  ai.js  scoring.js  questions.js  auth.js  db.js  metrics.js
-public/   index.html  teacher.html  student.html  css/app.css  js/{common,login,teacher,student}.js
-tests/    scoring.test.js  e2e.test.js
-scripts/  loadtest.js
-MASTER_PROMPT.md   docs/ARCHITECTURE.md   Dockerfile
-```
-
-## Deploy
-
-Any host that runs Node 20+ and supports WebSockets works (Render, Railway, Fly.io, a VM).
+Run the project's tests:
 
 ```bash
-docker build -t quizforge .
-docker run -p 3000:3000 -v quizforge-data:/data -e JWT_SECRET=$(openssl rand -hex 32) -e NEBIUS_API_KEY=... quizforge
+npm test
 ```
 
-Keep a single instance while room state is in memory (see the scaling path).
+If the load-test script is available, run:
 
-## Not implemented (honest list)
+```bash
+npm run loadtest
+```
 
-- Vector-based personalization of follow-up quizzes.
-- Multi-instance scaling (needs Redis pub/sub).
-- Resuming a live session after a server restart (saved results survive; the live room does not).
-- Email verification and password reset.
+Load-test measurements depend on the environment. Any reported benchmark should include the test conditions and should not be interpreted as a guarantee of production internet performance.
 
-## Resume bullets (adapt to your own numbers)
+## Project structure
 
-- Built **QuizForge**, a real-time classroom quiz platform (Node.js, WebSockets, SQLite) with separate teacher and student apps, role-based auth and a live leaderboard; sustained 350+ answers/s with p95 server handling under 1 ms in a 200-student simulation.
-- Integrated **Nebius Token Factory** LLMs to generate quizzes from topic, type and difficulty; added schema validation, retry and offline fallback so malformed model output never interrupts a live class.
-- Designed a **server-authoritative game engine** (state machine, server-side timing, answer secrecy until reveal, duplicate/late-answer rejection) and verified it with an end-to-end test using real WebSocket clients.
-- Added speed/streak scoring and AI-generated post-session teaching insights to turn quiz results into actionable feedback for teachers.
+```text
+server/       API, AI integration, authentication, scoring, and live engine
+public/       Teacher and student interfaces
+tests/        Automated tests
+scripts/      Load-testing utilities
+docs/         Architecture documentation
+```
+
+## Deployment
+
+QuizForge can be deployed to a Node.js host that supports WebSockets and persistent storage.
+
+Configure the required environment variables in your hosting provider's secret manager. Use persistent storage for SQLite and keep a single application instance while live room state remains in memory.
+
+A multi-instance deployment would require shared live state and coordination, such as Redis-based pub/sub.
+
+## Current limitations
+
+- Vector-based personalization of follow-up quizzes is not implemented.
+- Multi-instance scaling requires shared live state.
+- Live rooms do not resume after a server restart.
+- Email verification and password reset are not implemented.
+
+## License
+
+See [`LICENSE`](LICENSE).
