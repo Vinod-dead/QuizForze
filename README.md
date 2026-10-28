@@ -164,8 +164,7 @@ Contributions, bug reports, and feature suggestions are welcome. Open an issue t
 
 ## 📄 License
 
-A license has not been specified here. Add a `LICENSE` file only after choosing a license that is appropriate for the project's code and assets.
-
+QuizForge is licensed under the [MIT License](LICENSE)
 ---
 
 **QuizForge — Create. Play. Learn.**
