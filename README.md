@@ -108,14 +108,12 @@ Copy-Item .env.example .env
 Open `.env` and configure the variables required by the project, including your Nebius API key and desired model.
 
 Do not paste your API key into source files, README examples, screenshots, or public commits.
-
 ### 4. Start the application
 
-Use the start command defined in `package.json`. For example, if the project defines `npm start`:
+Start QuizForge with:
 
 ```bash
 npm start
-```
 
 If the project uses a different script, use the corresponding command from `package.json`.
 
