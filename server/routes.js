@@ -55,13 +55,36 @@ export function buildRoutes(db, engine) {
     const questions = normalizeQuestions(req.body.questions, undefined, 30);
     if (title.length < 2) return res.status(400).json({ error: 'Give the quiz a title.' });
     if (!questions.length) return res.status(400).json({ error: 'Add at least one valid question.' });
-    const difficulty = DIFFICULTIES.includes(req.body.difficulty) ? req.body.difficulty : 'medium';
-    const info = db.prepare('INSERT INTO quizzes (teacher_id,title,topic,difficulty,source,questions_json) VALUES (?,?,?,?,?,?)')
-      .run(req.user.id, title, str(req.body.topic, 200), difficulty, str(req.body.source, 60) || 'manual', JSON.stringify(questions));
-    res.status(201).json({ id: info.lastInsertRowid });
-  });
+    
+const difficulty = DIFFICULTIES.includes(req.body.difficulty)
+  ? req.body.difficulty
+  : 'medium';
 
-  r.get('/quizzes', requireAuth('teacher'), (req, res) => {
+const teacher = db.prepare(
+  "SELECT id FROM users WHERE id = ? AND role = 'teacher'"
+).get(req.user.id);
+
+if (!teacher) {
+  return res.status(401).json({
+    error: 'Your teacher session is no longer valid. Please sign in again.'
+  });
+}
+
+const info = db.prepare(
+  'INSERT INTO quizzes (teacher_id,title,topic,difficulty,source,questions_json) VALUES (?,?,?,?,?,?)'
+).run(
+  teacher.id,
+  title,
+  str(req.body.topic, 200),
+  difficulty,
+  str(req.body.source, 60) || 'manual',
+  JSON.stringify(questions)
+);
+
+res.status(201).json({ id: info.lastInsertRowid });
+});
+
+r.get('/quizzes', requireAuth('teacher'), (req, res) => {
     const rows = db.prepare('SELECT id,title,topic,difficulty,source,created_at,questions_json FROM quizzes WHERE teacher_id=? ORDER BY id DESC').all(req.user.id);
     res.json({ quizzes: rows.map(({ questions_json, ...q }) => ({ ...q, count: JSON.parse(questions_json).length })) });
   });
